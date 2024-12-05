@@ -1,11 +1,10 @@
 const express = require('express');
-const { studentsregister, studentslogin } = require('../controllers/studentsauthcontrol');
+const { studentsregister, tutorsregister, adminRegister } = require('../controllers/authcontroller');
 
 const authRouter = express.Router();
 
 authRouter.post('/students/register',studentsregister);
-authRouter.post('/students/login', studentslogin);
-// router.post('/forgot-password', forgotPassword);
-// router.post('/reset-password', resetPassword);
+authRouter.post('/tutors/register',tutorsregister);
+authRouter.post('/admins/register',adminRegister);
 
 module.exports = authRouter;
