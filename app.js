@@ -1,5 +1,6 @@
 const express = require('express');
 const authRouter = require('./routes/authRoutes.js');
+const profileRouter = require('./routes/profileRoutes.js');
 
 const app = express();
 
@@ -11,5 +12,7 @@ app.use(express.urlencoded({ extended: true }));
 
 
 app.use('/api/v1/auth',authRouter);
+app.use('/api/v1/profile',profileRouter);
+
 
 module.exports = app;
