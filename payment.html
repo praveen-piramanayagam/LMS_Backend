@@ -1,36 +1,83 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Razorpay Test Payment</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Page</title>
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 </head>
 <body>
-    <button id="pay-btn">Pay with Razorpay</button>
+    <h2>Select a Lesson</h2>
+    <div id="lessons"></div> <!-- Display the list of lessons -->
+
+    <button id="payNow" style="display: none;">Pay Now</button>
 
     <script>
-        const options = {
-            key: "<YOUR_TEST_KEY_ID>", // Replace with your test key
-            amount: "50000", // Amount in paisa
-            currency: "INR",
-            name: "Test Merchant",
-            description: "Test Transaction",
-            order_id: "<ORDER_ID>", // Replace with the Razorpay order_id
-            handler: function (response) {
-                console.log("Payment Success", response);
-                alert("Payment Successful! Payment ID: " + response.razorpay_payment_id);
-                // You can now test webhook and backend verification
-            },
-            prefill: {
-                name: "Test User",
-                email: "testuser@example.com",
-                contact: "9999999999",
-            },
+        // Function to fetch lessons
+        const fetchLessons = async () => {
+            try {
+                const response = await fetch('http://localhost:3001/api/v1/lessons/getlessons', {
+                    method: 'GET',
+                    // No authorization header, as we're testing without JWT
+                });
+
+                const lessons = await response.json();
+                console.log("Fetched lessons:", lessons);  // Log the API response
+
+                if (lessons.error) {
+                    alert(lessons.error);
+                    return;
+                }
+
+                // Check if lessons are returned and proceed
+                if (Array.isArray(lessons) && lessons.length > 0) {
+                    displayLessons(lessons);
+                } else {
+                    alert("No lessons found or invalid response format");
+                }
+            } catch (error) {
+                console.error("Error fetching lessons:", error);
+            }
         };
 
-        document.getElementById("pay-btn").onclick = function () {
-            const rzp = new Razorpay(options);
-            rzp.open();
+        // Function to display lessons
+        const displayLessons = (lessons) => {
+            const lessonsContainer = document.getElementById('lessons');
+            lessonsContainer.innerHTML = ''; // Clear previous data
+
+            lessons.forEach(lesson => {
+                // Log the lesson data to check for fields
+                console.log("Lesson:", lesson);
+
+                // Validate if lesson contains the required fields
+                if (!lesson.tutorId || !lesson.lesson_id) {
+                    console.error("Lesson missing required fields (tutorId or lesson_id):", lesson);
+                    return;
+                }
+
+                const lessonElement = document.createElement('div');
+                lessonElement.innerHTML = `
+                    <p><strong>${lesson.title}</strong></p>
+                    <p>${lesson.description}</p>
+                    <p><strong>Price:</strong> ₹${lesson.price}</p>
+                    <button class="buyLessonBtn" data-lesson-id="${lesson.lesson_id}">Buy Now</button>
+                `;
+                lessonsContainer.appendChild(lessonElement);
+            });
+
+            // Attach event listeners to all Buy Now buttons
+            const buyButtons = document.querySelectorAll('.buyLessonBtn');
+            buyButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const lessonId = button.getAttribute('data-lesson-id');
+                    createOrder(lessonId); // Call the function to create the order
+                });
+            });
         };
+
+        // Fetch lessons when the page loads
+        window.onload = fetchLessons;
     </script>
+
 </body>
 </html>
