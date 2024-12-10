@@ -25,10 +25,31 @@ exports.getLoggedInTutor = async (req, res) => {
 exports.createLesson = async (req, res) => {
     try {
         const { title, description, subject, duration, price } = req.body;
-        const tutorId = req.tutor.tutorId;
+        const tutorId = req.tutor.tutorId; // Extract tutorId from JWT
+
+        // Log tutorId for debugging
+        console.log("Logged-in Tutor ID:", tutorId);
 
         if (!title || !description || !subject || !duration || !price) {
             return res.status(400).json({ error: 'All fields are required!' });
+        }
+
+        // Ensure tutorId is a valid ObjectId format
+        if (!mongoose.Types.ObjectId.isValid(tutorId)) {
+            return res.status(400).json({ error: 'Invalid tutorId format!' });
+        }
+
+        // Log for debugging to check if tutorId is correctly passed
+        console.log("Tutor ID is valid, querying Tutor collection...");
+
+        // Fetch tutor's email from the Tutor collection by tutorId
+        const tutor = await tutors.findOne({ tutorId: new mongoose.Types.ObjectId(tutorId) });
+        
+        // Log the fetched tutor object for debugging
+        console.log("Fetched Tutor Object:", tutor);
+
+        if (!tutor) {
+            return res.status(404).json({ error: 'Tutor not found!' });
         }
 
         // Create a new lesson (MongoDB auto-generates lesson_id)
@@ -39,6 +60,7 @@ exports.createLesson = async (req, res) => {
             duration,
             price,
             tutorId,
+            tutorEmail: tutor.email, // Assign tutor's email to the lesson
         });
 
         await lesson.save();
@@ -55,7 +77,7 @@ exports.createLesson = async (req, res) => {
 
 
 
-// Get All Lessons for the Logged-In Tutor
+// // Get All Lessons for the Logged-In Tutor
 exports.getLessons = async (req, res) => {
     try {
         const tutorId = req.tutor.tutorId;
@@ -75,7 +97,7 @@ exports.getLessons = async (req, res) => {
 
 
 
-// // Update Lesson
+// // // Update Lesson
 exports.updateLesson = async (req, res) => {
     try {
         const { lessonId } = req.params; // Extract lessonId from URL
@@ -111,7 +133,7 @@ exports.updateLesson = async (req, res) => {
 
 
 
-// // Delete Lesson
+// // // Delete Lesson
 exports.deleteLesson = async (req, res) => {
     try {
         const { lessonId } = req.params; // Extract lessonId from URL

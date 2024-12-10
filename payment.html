@@ -1,83 +1,92 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Payment Page</title>
-    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Razorpay Test Payment</title>
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 </head>
 <body>
-    <h2>Select a Lesson</h2>
-    <div id="lessons"></div> <!-- Display the list of lessons -->
+  <h1>Test Razorpay Payment</h1>
+  <button id="payNow">Pay Now</button>
 
-    <button id="payNow" style="display: none;">Pay Now</button>
+  <script>
+  const handlePayment = async () => {
+    try {
+      // Add a dummy JWT token for now (replace with real JWT token later)
+      const dummyToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2NzU3M2Y2ZjBhYjVkY2MwODA1MDIwMjIiLCJzdHVkZW50SWQiOiI2NzU3M2Y2ZjBhYjVkY2MwODA1MDIwMjEiLCJuYW1lIjoiUHJhdmVlbiIsImVtYWlsIjoicHJhdmVlbnBpcmFtYW5heWFnYW1AZ21haWwuY29tIiwiaWF0IjoxNzMzODU0Njg2LCJleHAiOjE3MzM4NTgyODZ9.dJrhOiK-xDrjogYTczscQjrtU6pgM9yJPLCExC139WQ"; // Replace with your actual JWT token
 
-    <script>
-        // Function to fetch lessons
-        const fetchLessons = async () => {
-            try {
-                const response = await fetch('http://localhost:3001/api/v1/lessons/getlessons', {
-                    method: 'GET',
-                    // No authorization header, as we're testing without JWT
-                });
+      // Send the lesson_id to the server to create an order
+      const response = await fetch("http://localhost:3001/api/v1/order/createorder", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${dummyToken}`, // Include the JWT token here
+        },
+        body: JSON.stringify({ lesson_id: "6757ea66ba9a0c8d5544bd69" }), // Replace with your actual lesson ID
+      });
 
-                const lessons = await response.json();
-                console.log("Fetched lessons:", lessons);  // Log the API response
+      const data = await response.json();
+      console.log("Create Order Response:", data);
 
-                if (lessons.error) {
-                    alert(lessons.error);
-                    return;
-                }
+      if (data.error) {
+        alert("Error creating order: " + data.error);
+        return;
+      }
 
-                // Check if lessons are returned and proceed
-                if (Array.isArray(lessons) && lessons.length > 0) {
-                    displayLessons(lessons);
-                } else {
-                    alert("No lessons found or invalid response format");
-                }
-            } catch (error) {
-                console.error("Error fetching lessons:", error);
-            }
-        };
+      const { order_id, amount } = data; // Backend response (order_id and amount)
 
-        // Function to display lessons
-        const displayLessons = (lessons) => {
-            const lessonsContainer = document.getElementById('lessons');
-            lessonsContainer.innerHTML = ''; // Clear previous data
+      // Step 2: Razorpay Checkout options
+      const options = {
+        key: "rzp_test_9qlbqULX5I6dyn", // Replace with your Razorpay key ID
+        amount: amount * 100, // Amount in paisa (100 paisa = 1 INR)
+        currency: "INR",
+        order_id: order_id, // Razorpay order ID from the backend
+        handler: async function (response) {
+          console.log("Payment response:", response);
 
-            lessons.forEach(lesson => {
-                // Log the lesson data to check for fields
-                console.log("Lesson:", lesson);
+          // Step 3: Verify the payment via the backend
+          const verifyResponse = await fetch("http://localhost:3001/api/v1/order/verifypayment", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_signature: response.razorpay_signature,
+            }),
+          });
 
-                // Validate if lesson contains the required fields
-                if (!lesson.tutorId || !lesson.lesson_id) {
-                    console.error("Lesson missing required fields (tutorId or lesson_id):", lesson);
-                    return;
-                }
+          const verifyData = await verifyResponse.json();
+          console.log("Verify Payment Response:", verifyData);
 
-                const lessonElement = document.createElement('div');
-                lessonElement.innerHTML = `
-                    <p><strong>${lesson.title}</strong></p>
-                    <p>${lesson.description}</p>
-                    <p><strong>Price:</strong> ₹${lesson.price}</p>
-                    <button class="buyLessonBtn" data-lesson-id="${lesson.lesson_id}">Buy Now</button>
-                `;
-                lessonsContainer.appendChild(lessonElement);
-            });
+          if (verifyData.error) {
+            alert("Payment verification failed: " + verifyData.error);
+          } else {
+            alert("Payment successful and verified!");
+          }
+        },
+        prefill: {
+          name: "Test User", // You can customize this
+          email: "test.user@example.com", // You can customize this
+          contact: "9999999999", // You can customize this
+        },
+        theme: {
+          color: "#3399cc", // Customize the color of the Razorpay button
+        },
+      };
 
-            // Attach event listeners to all Buy Now buttons
-            const buyButtons = document.querySelectorAll('.buyLessonBtn');
-            buyButtons.forEach(button => {
-                button.addEventListener('click', () => {
-                    const lessonId = button.getAttribute('data-lesson-id');
-                    createOrder(lessonId); // Call the function to create the order
-                });
-            });
-        };
+      const razorpay = new Razorpay(options);
+      razorpay.open();
+    } catch (error) {
+      console.error("Error in payment:", error);
+      alert("Payment failed! Check console for details.");
+    }
+  };
 
-        // Fetch lessons when the page loads
-        window.onload = fetchLessons;
-    </script>
-
+  // Attach click handler to "Pay Now" button
+  document.getElementById("payNow").addEventListener("click", handlePayment);
+  </script>
 </body>
 </html>

@@ -1,23 +1,29 @@
-const crypto = require('crypto');
+const crypto = require("crypto");
+const Order = require("../models/orders"); // Ensure you are using your Order model
 
-exports.verifycontroller = (req, res) => {
-  const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
+exports.verifycontroller = async (req, res) => {
+    try {
+        const { razorpay_payment_id, razorpay_order_id, razorpay_signature } = req.body;
 
-  try {
-    const body = razorpay_order_id + "|" + razorpay_payment_id;
-    const expectedSignature = crypto
-      .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
-      .update(body.toString())
-      .digest('hex');
+        // Generate the expected signature
+        const shasum = crypto.createHmac("sha256", process.env.RAZORPAY_KEY_SECRET);
+        shasum.update(`${razorpay_order_id}|${razorpay_payment_id}`);
+        const expectedSignature = shasum.digest("hex");
 
-    if (expectedSignature === razorpay_signature) {
-      res.status(200).json({ message: "Payment verified successfully" });
-    } else {
-      console.error("Invalid signature received:", razorpay_signature); // Log invalid signature error
-      res.status(400).json({ error: "Invalid payment signature" });
+        // Verify signature
+        if (expectedSignature !== razorpay_signature) {
+            return res.status(400).json({ error: "Invalid payment signature" });
+        }
+
+        // Update order status to "paid" in the database
+        const updatedOrder = await Order.updateOne(
+            { razorpay_order_id },
+            { status: "paid" }
+        );
+
+        res.status(200).json({ message: "Payment verified and order updated successfully", updatedOrder });
+    } catch (error) {
+        console.error("Payment verification error:", error);
+        res.status(500).json({ error: "Failed to verify payment." });
     }
-  } catch (err) {
-    console.error("Error verifying payment:", err.message);  // Log the error message
-    res.status(500).json({ error: "Failed to verify payment" });
-  }
 };

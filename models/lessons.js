@@ -8,6 +8,7 @@ const lessonSchema = new mongoose.Schema({
     duration: { type: Number, required: true },
     price: { type: Number, required: true },
     tutorId: { type: mongoose.Schema.Types.ObjectId, ref: 'Tutor', required: true },
+    tutorEmail: { type: String, required: true },
 }, { timestamps: true });
 
 module.exports = mongoose.model('Lesson', lessonSchema);

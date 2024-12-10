@@ -10,11 +10,11 @@ profileRouter.get('/getstudent/:studentId',getStudentsProfile);
 profileRouter.put('/updatestudent/:studentId',updateStudentProfile);
 profileRouter.get('/gettutor/:tutorId',getTutorsProfile);
 profileRouter.put('/updatetutor/:tutorId',updateTutorsProfile);
-profileRouter.get('/getadmin/:adminId',getAdminsProfile);
-profileRouter.put('/updateadmin/:adminId',updateAdminProfile);
+profileRouter.get('/getadmin/:adminId',isAdmin,getAdminsProfile);
+profileRouter.put('/updateadmin/:adminId',isAdmin,updateAdminProfile);
 
 
-//Delete by admin
+//Delete by admin only
 profileRouter.delete('/deletestudent/:studentId', isAdmin, deleteStudent);
 profileRouter.delete('/deletetutor/:tutorId', isAdmin, deletetutor);
 
