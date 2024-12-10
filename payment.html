@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Razorpay Test Payment</title>
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+</head>
+<body>
+    <button id="pay-btn">Pay with Razorpay</button>
+
+    <script>
+        const options = {
+            key: "<YOUR_TEST_KEY_ID>", // Replace with your test key
+            amount: "50000", // Amount in paisa
+            currency: "INR",
+            name: "Test Merchant",
+            description: "Test Transaction",
+            order_id: "<ORDER_ID>", // Replace with the Razorpay order_id
+            handler: function (response) {
+                console.log("Payment Success", response);
+                alert("Payment Successful! Payment ID: " + response.razorpay_payment_id);
+                // You can now test webhook and backend verification
+            },
+            prefill: {
+                name: "Test User",
+                email: "testuser@example.com",
+                contact: "9999999999",
+            },
+        };
+
+        document.getElementById("pay-btn").onclick = function () {
+            const rzp = new Razorpay(options);
+            rzp.open();
+        };
+    </script>
+</body>
+</html>

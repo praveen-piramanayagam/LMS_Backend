@@ -17,7 +17,6 @@ profileRouter.put('/updateadmin/:adminId',updateAdminProfile);
 //Delete by admin
 profileRouter.delete('/deletestudent/:studentId', isAdmin, deleteStudent);
 profileRouter.delete('/deletetutor/:tutorId', isAdmin, deletetutor);
-// adminRouter.delete('/admins/:adminId', isAdmin, deleteAdmin);
 
 
 module.exports = profileRouter;

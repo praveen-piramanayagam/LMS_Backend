@@ -4,7 +4,7 @@ const tutorsSchema = new mongoose.Schema({
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
-    tutorId: { type: String, required: true, unique: true },
+    tutorId: { type: mongoose.Schema.Types.ObjectId, required: true, unique: true }, // Arbitrary identifier, could be used as a username or external ID
     userId: { type: String, required: true, unique: true },
     experience: { type: Number, required: true }, // Experience in years
     qualifications: { type: String, required: true },
@@ -24,11 +24,6 @@ const tutorsSchema = new mongoose.Schema({
             validator: (val) => val.length > 0,
             message: 'At least one available day is required in a week',
         },
-    },
-    price: {
-        type: Number,
-        required: true,
-        min: [0, 'Price must be greater than or equal to 0'],
     },
     studentsReview: {
         type: [

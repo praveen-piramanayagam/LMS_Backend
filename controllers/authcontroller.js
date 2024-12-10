@@ -3,6 +3,8 @@ const jwt = require('jsonwebtoken');
 const students = require('../models/students');
 const tutors = require('../models/tutors');
 const Admin = require('../models/admins');
+const mongoose = require('mongoose');
+
 
 // Helper function to validate email and password
 const validateInput = (email, password) => {
@@ -27,40 +29,47 @@ exports.studentsregister = async (req, res) => {
             return res.status(400).json({ error: 'Email already exists!' });
         }
 
-        // Generate a new student ID (starting from 1)
-        const lastStudent = await students.findOne().sort({ studentId: -1 });
-        const lastIdNumber = lastStudent ? parseInt(lastStudent.studentId.split('-')[2]) : 0;
-        const newStudentId = `student-id-${lastIdNumber + 1}`;
+        // Generate a new studentId as ObjectId
+        const newStudentId = new mongoose.Types.ObjectId();
 
         // Generate userId (ensure it is unique and not null)
         const newUserId = `user-id-${new Date().getTime()}`;
 
         // Save the student
         const hashedPassword = await bcrypt.hash(password, 10);
-        const user = await students.create({ name, email, password: hashedPassword, studentId: newStudentId, userId: newUserId });
+        const user = await students.create({
+            name,
+            email,
+            password: hashedPassword,
+            studentId: newStudentId,  // Assign generated ObjectId as studentId
+            userId: newUserId,
+        });
 
-        res.status(201).json({ message: 'Student registered successfully!', studentId: user.studentId });
+        res.status(201).json({
+            message: 'Student registered successfully!',
+            studentId: user.studentId,  // Return studentId as ObjectId
+        });
     } catch (err) {
         console.error(err); // Log the actual error
         res.status(500).json({ error: 'An error occurred during registration!' });
     }
 };
 
-// Students Login
+// Student Login
 exports.studentslogin = async (req, res) => {
     const { email, password } = req.body;
     try {
-        // Check if the user exists
-        const user = await students.findOne({ email });
-        if (!user) return res.status(404).json({ error: 'User not found!' });
+        // Check if the student exists
+        const student = await students.findOne({ email });
+        if (!student) return res.status(404).json({ error: 'User not found!' });
 
         // Compare the provided password with the stored hashed password
-        const isPasswordMatch = await bcrypt.compare(password, user.password);
+        const isPasswordMatch = await bcrypt.compare(password, student.password);
         if (!isPasswordMatch) return res.status(401).json({ error: 'Invalid credentials!' });
 
-        // Create a JWT token (you can adjust the payload to your needs)
+        // Create a JWT token
         const token = jwt.sign(
-            { userId: user._id, studentId: user.studentId }, // Payload data
+            { userId: student._id, studentId: student.studentId, name: student.name, email: student.email },
             process.env.JWT_SECRET, // Secret key (use an environment variable)
             { expiresIn: '1h' } // Token expiration time
         );
@@ -68,10 +77,37 @@ exports.studentslogin = async (req, res) => {
         // Send the token and other relevant data
         res.status(200).json({ message: 'Login successful!', token });
     } catch (err) {
-        console.error(err); // Log the actual error
+        console.error("Login error:", err); // Log the actual error
         res.status(500).json({ error: 'Something went wrong!' });
     }
 };
+
+
+// Middleware to authenticate student
+exports.isStudent = (req, res, next) => {
+    const token = req.headers.authorization?.split(' ')[1];
+
+    if (!token) {
+        return res.status(401).json({ error: 'Unauthorized! No token provided.' });
+    }
+
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        console.log('Decoded student data:', decoded);  // Log decoded token data
+
+        // Check if decoded contains the required fields
+        if (!decoded.userId || !decoded.studentId || !decoded.name || !decoded.email) {
+            return res.status(400).json({ error: 'Invalid token payload!' });
+        }
+
+        req.student = decoded; // Attach student info to the request object
+        next(); // Proceed to the next middleware/route handler
+    } catch (err) {
+        console.error('Token verification error:', err);
+        return res.status(401).json({ error: 'Invalid or expired token!' });
+    }
+};
+
 
 
 // Register tutor
@@ -84,8 +120,7 @@ exports.tutorsregister = async (req, res) => {
         qualifications, 
         expertise, 
         subjects, 
-        availability, 
-        price 
+        availability 
     } = req.body;
 
     // Validate email and password
@@ -94,7 +129,7 @@ exports.tutorsregister = async (req, res) => {
     }
 
     // Validate that all required fields are provided
-    if (!name || !email || !password || !experience || !qualifications || !expertise || !subjects || !availability || !price) {
+    if (!name || !email || !password || !experience || !qualifications || !expertise || !subjects || !availability) {
         return res.status(400).json({ error: 'Please provide all required fields!' });
     }
 
@@ -105,12 +140,10 @@ exports.tutorsregister = async (req, res) => {
             return res.status(400).json({ error: 'Email already exists!' });
         }
 
-        // Generate a new tutor ID (starting from 1)
-        const lastTutor = await tutors.findOne().sort({ tutorId: -1 });
-        const lastIdNumber = lastTutor ? parseInt(lastTutor.tutorId.split('-')[2]) : 0;
-        const newTutorId = `tutor-id-${lastIdNumber + 1}`;
+        // Generate a unique tutorId using MongoDB's ObjectId
+        const newTutorId = new mongoose.Types.ObjectId(); // Generates a unique ObjectId
 
-        // Generate a unique userId
+        // Generate a unique userId (you can keep this as a string, as it doesn't need to be an ObjectId)
         const newUserId = `user-id-${new Date().getTime()}`;
 
         // Hash the password before saving
@@ -121,14 +154,13 @@ exports.tutorsregister = async (req, res) => {
             name,
             email,
             password: hashedPassword,
-            tutorId: newTutorId,
-            userId: newUserId,
+            tutorId: newTutorId, // Store tutorId as an ObjectId
+            userId: newUserId,   // Store userId as a string
             experience,
             qualifications,
             expertise,
             subjects,
             availability,
-            price
         });
 
         res.status(201).json({ message: 'Tutor registered successfully!', tutorId: user.tutorId });
@@ -152,7 +184,7 @@ exports.tutorslogin = async (req, res) => {
 
         // Create a JWT token (you can adjust the payload to your needs)
         const token = jwt.sign(
-            { userId: user._id, studentId: user.studentId }, // Payload data
+            { userId: user._id, tutorId: user.tutorId }, // Payload data
             process.env.JWT_SECRET, // Secret key (use an environment variable)
             { expiresIn: '1h' } // Token expiration time
         );
@@ -164,6 +196,28 @@ exports.tutorslogin = async (req, res) => {
         res.status(500).json({ error: 'Something went wrong!' });
     }
 };
+
+
+// Middleware to authenticate tutor
+exports.isTutor = (req, res, next) => {
+    const token = req.headers.authorization?.split(' ')[1];
+
+    if (!token) {
+        return res.status(401).json({ error: 'Unauthorized! No token provided.' });
+    }
+
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        req.tutor = decoded; // Add the decoded tutor info to the request object
+        console.log('Logged-in tutor:', req.tutor);
+        next();
+    } catch (err) {
+        console.error('Token verification error:', err);
+        res.status(401).json({ error: 'Invalid or expired token!' });
+    }
+};
+
+
 
 // Register Admin
 exports.adminRegister = async (req, res) => {
@@ -199,6 +253,7 @@ exports.adminRegister = async (req, res) => {
         res.status(500).json({ error: 'An error occurred during registration!' });
     }
 };
+
 
 // Admin Login
 exports.adminlogin = async (req, res) => {
