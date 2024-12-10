@@ -18,6 +18,9 @@ app.use(express.json());
 
 // Enable CORS for all routes
 app.use(cors());  // This allows all origins by default
+app.use(cors({
+    origin: 'http://localhost:5174', // Your frontend URL
+  }));
 
 // Middleware to parse URL-encoded data
 app.use(express.urlencoded({ extended: true }));
