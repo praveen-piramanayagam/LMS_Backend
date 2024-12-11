@@ -37,7 +37,7 @@ app.use('/api/v1/profile',profileRouter);
 app.use('/api/v1/filtertutor',filterRouter);
 app.use('/api/v1/lessons',lessonRouter);
 app.use('/api/v1/order',orderRouter);
-app.use("/api/v1/order",verifyRouter);
+app.use("/api/v1/orderverify",verifyRouter);
 // app.use("api/v1/getorderdetails",verifyRouter);
 
 
