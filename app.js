@@ -24,7 +24,7 @@ app.use(cors());  // This allows all origins by default
 
 app.use(cors({ origin: "http://localhost" }));
 app.use(cors({
-    origin: ['http://127.0.0.1:5500', 'http://localhost:5174'], // Add your frontend URLs here
+    origin: ['http://127.0.0.1:5500', 'http://localhost:5173'], // Add your frontend URLs here
     methods: ['GET', 'POST'],
     allowedHeaders: ['Content-Type', 'Authorization'],
   }));
