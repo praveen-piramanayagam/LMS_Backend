@@ -6,8 +6,7 @@ const filterRouter = require('./routes/filterRouter.js');
 const lessonRouter = require('./routes/lessonRoutes.js');
 const orderRouter = require('./routes/orderRoutes.js');
 const verifyRouter = require('./routes/verifyRoutes.js');
-
-
+// const zoomOAuth = require('./routes/zoomOAuth.js');
 
 const app = express();
 
@@ -17,29 +16,22 @@ require('dotenv').config();
 app.use(express.json());
 
 // Enable CORS for all routes
-app.use(cors());  // This allows all origins by default
-// app.use(cors({
-//     origin: 'http://localhost:5174', // Your frontend URL
-//   }));
-
-app.use(cors({ origin: "http://localhost" }));
+app.use(cors());
 app.use(cors({
     origin: ['http://127.0.0.1:5500', 'http://localhost:5173'], // Add your frontend URLs here
     methods: ['GET', 'POST'],
     allowedHeaders: ['Content-Type', 'Authorization'],
-  }));
+}));
+
 // Middleware to parse URL-encoded data
 app.use(express.urlencoded({ extended: true }));
 
-
-app.use('/api/v1/auth',authRouter);
-app.use('/api/v1/profile',profileRouter);   
-app.use('/api/v1/filtertutor',filterRouter);
-app.use('/api/v1/lessons',lessonRouter);
-app.use('/api/v1/order',orderRouter);
-app.use("/api/v1/orderverify",verifyRouter);
-// app.use("api/v1/getorderdetails",verifyRouter);
-
-
+// Route imports
+app.use('/api/v1/auth', authRouter);
+app.use('/api/v1/profile', profileRouter);   
+app.use('/api/v1/filtertutor', filterRouter);
+app.use('/api/v1/lessons', lessonRouter);
+app.use('/api/v1/order', orderRouter);
+app.use("/api/v1/orderverify", verifyRouter);
 
 module.exports = app;

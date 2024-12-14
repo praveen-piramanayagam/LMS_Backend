@@ -1,79 +1,60 @@
+// const { getZoomAccessToken, createZoomMeeting } = require('../utils/zoomUtils');  // Import the necessary functions
+const Lesson = require('../models/lessons');
 const tutors = require('../models/tutors');
 const mongoose = require('mongoose');
-const Lesson = require('../models/lessons');
-const { ObjectId } = require('mongoose').Types; // Import ObjectId from mongoose
-
-// Get LoggedIn Tutor
-exports.getLoggedInTutor = async (req, res) => {
-    try {
-        const tutorId = mongoose.Types.ObjectId(req.tutor.tutorId);  // Ensure tutorId is an ObjectId
-        const tutor = await tutors.findOne({ tutorId }).select('-password');
-
-        if (!tutor) {
-            return res.status(404).json({ error: 'Tutor not found!' });
-        }
-
-        res.status(200).json(tutor);
-    } catch (err) {
-        console.error('Error fetching tutor details:', err.message);
-        res.status(500).json({ error: 'Failed to fetch tutor details!' });
-    }
-};
 
 
-// Create Lesson
 exports.createLesson = async (req, res) => {
     try {
         const { title, description, subject, duration, price } = req.body;
-        const tutorId = req.tutor.tutorId; // Extract tutorId from JWT
-
-        // Log tutorId for debugging
-        console.log("Logged-in Tutor ID:", tutorId);
+        const tutorId = req.tutor.tutorId;
 
         if (!title || !description || !subject || !duration || !price) {
             return res.status(400).json({ error: 'All fields are required!' });
         }
 
-        // Ensure tutorId is a valid ObjectId format
-        if (!mongoose.Types.ObjectId.isValid(tutorId)) {
-            return res.status(400).json({ error: 'Invalid tutorId format!' });
+        if (!tutorId) {
+            return res.status(400).json({ error: 'Tutor ID is required!' });
         }
 
-        // Log for debugging to check if tutorId is correctly passed
-        console.log("Tutor ID is valid, querying Tutor collection...");
-
-        // Fetch tutor's email from the Tutor collection by tutorId
-        const tutor = await tutors.findOne({ tutorId: new mongoose.Types.ObjectId(tutorId) });
-        
-        // Log the fetched tutor object for debugging
-        console.log("Fetched Tutor Object:", tutor);
-
+        const tutor = await tutors.findOne({ tutorId: tutorId });
         if (!tutor) {
             return res.status(404).json({ error: 'Tutor not found!' });
         }
 
-        // Create a new lesson (MongoDB auto-generates lesson_id)
-        const lesson = new Lesson({
+        // Generate a unique Jitsi meeting link including tutorId and subject
+        const meetingLink = `https://meet.jit.si/${tutorId}-${subject}-${title}`;
+
+        // Save the lesson to the database with the Jitsi meeting link
+        const newLesson = new Lesson({
             title,
             description,
             subject,
             duration,
             price,
             tutorId,
-            tutorEmail: tutor.email, // Assign tutor's email to the lesson
+            tutorEmail: tutor.email,
+            meetingLink,
         });
 
-        await lesson.save();
+        await newLesson.save();
 
-        res.status(201).json({ message: 'Lesson created successfully!', lesson });
+        res.status(201).json({
+            message: 'Lesson created successfully!',
+            lesson: newLesson,
+        });
     } catch (err) {
         console.error('Error creating lesson:', err.message);
-        if (err.code === 11000) {
-            return res.status(400).json({ error: 'Duplicate lesson_id detected!' });
-        }
         res.status(500).json({ error: 'Failed to create lesson!' });
     }
 };
+
+
+
+
+
+
+
 
 
 
@@ -96,8 +77,7 @@ exports.getLessons = async (req, res) => {
 };
 
 
-
-// // // Update Lesson
+// // Update Lesson
 exports.updateLesson = async (req, res) => {
     try {
         const { lessonId } = req.params; // Extract lessonId from URL
@@ -131,9 +111,7 @@ exports.updateLesson = async (req, res) => {
 };
 
 
-
-
-// // // Delete Lesson
+// // Delete Lesson
 exports.deleteLesson = async (req, res) => {
     try {
         const { lessonId } = req.params; // Extract lessonId from URL
@@ -160,3 +138,19 @@ exports.deleteLesson = async (req, res) => {
 };
 
 
+// Get LoggedIn Tutor
+exports.getLoggedInTutor = async (req, res) => {
+    try {
+        const tutorId = mongoose.Types.ObjectId(req.tutor.tutorId);  // Ensure tutorId is an ObjectId
+        const tutor = await tutors.findOne({ tutorId }).select('-password');
+
+        if (!tutor) {
+            return res.status(404).json({ error: 'Tutor not found!' });
+        }
+
+        res.status(200).json(tutor);
+    } catch (err) {
+        console.error('Error fetching tutor details:', err.message);
+        res.status(500).json({ error: 'Failed to fetch tutor details!' });
+    }
+};
