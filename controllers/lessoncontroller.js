@@ -1,14 +1,13 @@
-// const { getZoomAccessToken, createZoomMeeting } = require('../utils/zoomUtils');  // Import the necessary functions
 const Lesson = require('../models/lessons');
 const tutors = require('../models/tutors');
 const mongoose = require('mongoose');
 
-
 exports.createLesson = async (req, res) => {
     try {
         const { title, description, subject, duration, price } = req.body;
-        const tutorId = req.tutor.tutorId;
+        const tutorId = req.tutor.tutorId; // Assuming tutorId is passed in `req.tutor`
 
+        // Validate required fields
         if (!title || !description || !subject || !duration || !price) {
             return res.status(400).json({ error: 'All fields are required!' });
         }
@@ -17,26 +16,28 @@ exports.createLesson = async (req, res) => {
             return res.status(400).json({ error: 'Tutor ID is required!' });
         }
 
-        const tutor = await tutors.findOne({ tutorId: tutorId });
+        // Ensure `tutorId` is valid and exists in the tutors collection
+        const tutor = await tutors.findOne({ tutorId });
         if (!tutor) {
             return res.status(404).json({ error: 'Tutor not found!' });
         }
 
-        // Generate a unique Jitsi meeting link including tutorId and subject
+        // Generate the Jitsi meeting link
         const meetingLink = `https://meet.jit.si/${tutorId}-${subject}-${title}`;
 
-        // Save the lesson to the database with the Jitsi meeting link
+        // Create a new lesson document
         const newLesson = new Lesson({
             title,
             description,
             subject,
             duration,
             price,
-            tutorId,
+            tutorId, // Directly store the tutorId as a reference
             tutorEmail: tutor.email,
             meetingLink,
         });
 
+        // Save the lesson to the database
         await newLesson.save();
 
         res.status(201).json({
@@ -50,68 +51,95 @@ exports.createLesson = async (req, res) => {
 };
 
 
-
-
-
-
-
-
-
-
-// // Get All Lessons for the Logged-In Tutor
-exports.getLessons = async (req, res) => {
+exports.getLessonsByTutorId = async (req, res) => {
     try {
-        const tutorId = req.tutor.tutorId;
+        const tutorId = req.params.tutorId; // Extract tutorId from route params
+        console.log("Requested Tutor ID:", tutorId);
 
-        const lessons = await Lesson.find({ tutorId });
+        // Find lessons for the given tutorId
+        const tutorLessons = await Lesson
+            .find({ tutorId }) // Find lessons where tutorId matches
+            .populate('tutorId', 'name email subjects experience'); // Populate tutor details
 
-        if (!lessons.length) {
-            return res.status(404).json({ message: 'No lessons found for this tutor!' });
+        // If no lessons found, return an empty array
+        if (!tutorLessons || tutorLessons.length === 0) {
+            return res.status(404).json({ error: 'No lessons found for this tutor' });
         }
 
-        res.status(200).json(lessons);
+        console.log("Fetched Lessons:", tutorLessons);
+        res.status(200).json(tutorLessons);
     } catch (err) {
-        console.error('Error fetching lessons:', err.message);
-        res.status(500).json({ error: 'Failed to fetch lessons!' });
+        console.error("Error fetching lessons:", err);
+        res.status(500).json({ error: 'Failed to fetch lessons' });
     }
 };
 
+
+exports.getlessoncreated = async(req,res)=>{
+    try {
+        const tutorId = req.tutor.tutorId;
+        // Find lessons created by the logged-in tutor
+        const tutorLessons = await Lesson
+            .find({ tutorId }) // Find lessons where tutorId matches
+
+        // If no lessons found, return an empty array
+        if (!tutorLessons || tutorLessons.length === 0) {
+            return res.status(404).json({ error: 'No lessons found for this tutor' });
+        }
+
+        console.log("Fetched Lessons:", tutorLessons);
+        res.status(200).json(tutorLessons);
+    } catch (err) {
+        console.error("Error fetching lessons:", err);
+        res.status(500).json({ error: 'Failed to fetch lessons' });
+    }
+};
 
 // // Update Lesson
 exports.updateLesson = async (req, res) => {
     try {
-        const { lessonId } = req.params; // Extract lessonId from URL
-        const tutorId = req.tutor.tutorId;
-        const { title, description, duration, price } = req.body;
+        const { lesson_id } = req.params; // Extract lesson_id from params
+        const updateData = req.body;     // Get update data from the request body
+        console.log('Params:', req.params);
+        console.log('Body:', req.body);
 
-        if (!mongoose.Types.ObjectId.isValid(lessonId)) {
-            return res.status(400).json({ error: 'Invalid lesson_id!' });
+
+
+        // Check if `lesson_id` is provided
+        if (!lesson_id) {
+            return res.status(400).json({ error: 'Lesson ID is required' });
         }
 
-        const lesson = await Lesson.findOne({ lesson_id: lessonId, tutorId });
+        // Convert `lesson_id` to ObjectId
+        const objectId = new mongoose.Types.ObjectId(lesson_id);
 
-        if (!lesson) {
-            return res.status(404).json({ error: 'Lesson not found or not authorized to update!' });
+        // Find and update the lesson
+        const updatedLesson = await Lesson.findOneAndUpdate(
+            { lesson_id: objectId },
+            { $set: updateData },
+            { new: true }
+        );
+
+        if (!updatedLesson) {
+            return res.status(404).json({ error: 'Lesson not found' });
         }
 
-        // Update lesson fields
-        lesson.title = title || lesson.title;
-        lesson.description = description || lesson.description;
-        lesson.duration = duration || lesson.duration;
-        lesson.price = price || lesson.price;
-        lesson.updatedAt = Date.now();
-
-        const updatedLesson = await lesson.save();
-
-        res.status(200).json({ message: 'Lesson updated successfully!', updatedLesson });
-    } catch (err) {
-        console.error('Error updating lesson:', err.message);
-        res.status(500).json({ error: 'Failed to update lesson!' });
+        res.status(200).json({
+            message: 'Lesson updated successfully',
+            updatedLesson,
+        });
+    } catch (error) {
+        console.error('Error updating lesson:', error);
+        res.status(500).json({
+            error: 'An error occurred while updating the lesson',
+            details: error.message,
+        });
     }
 };
 
 
-// // Delete Lesson
+
+// Delete Lesson
 exports.deleteLesson = async (req, res) => {
     try {
         const { lessonId } = req.params; // Extract lessonId from URL

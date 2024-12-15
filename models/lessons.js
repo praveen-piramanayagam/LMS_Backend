@@ -2,8 +2,7 @@ const mongoose = require('mongoose');
 
 const lessonSchema = new mongoose.Schema({
     lesson_id: { 
-        type: mongoose.Schema.Types.ObjectId, 
-        unique: true, 
+        type: mongoose.Schema.Types.ObjectId,
         default: () => new mongoose.Types.ObjectId() // Automatically generate lesson_id if not provided
     },
     title: { type: String, required: true },

@@ -14,7 +14,7 @@
   const handlePayment = async () => {
     try {
       // Add a dummy JWT token for now (replace with real JWT token later)
-      const dummyToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2NzU3M2Y2ZjBhYjVkY2MwODA1MDIwMjIiLCJzdHVkZW50SWQiOiI2NzU3M2Y2ZjBhYjVkY2MwODA1MDIwMjEiLCJuYW1lIjoiUHJhdmVlbiIsImVtYWlsIjoicHJhdmVlbnBpcmFtYW5heWFnYW1AZ21haWwuY29tIiwiaWF0IjoxNzMzOTI1MjQ1LCJleHAiOjE3MzM5Mjg4NDV9.iBgDIE_krQtThwnif8DGQMA4bkBIA3yIqYL2vpg9DQ8"; // Replace with your actual JWT token
+      const dummyToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2NzVkOGM0YWQ4YWQyNjI1MDI5N2IxYjIiLCJzdHVkZW50SWQiOiI2NzVkOGM0YWQ4YWQyNjI1MDI5N2IxYjEiLCJuYW1lIjoicHJhdmVlbiIsImVtYWlsIjoicHJhdmVlbnBpcmFtYW5heWFnYW1AZ21haWwuY29tIiwiaWF0IjoxNzM0MjQ2Nzg3LCJleHAiOjE3MzQyNTAzODd9.pCvjY0LC3OccTyUX3ZixhCO7RHTQ7XpCQGvcYL6Qr-E"; // Replace with your actual JWT token
 
       // Send the lesson_id to the server to create an order
       const response = await fetch("http://localhost:3001/api/v1/order/createorder", {
@@ -23,7 +23,7 @@
           "Content-Type": "application/json",
           "Authorization": `Bearer ${dummyToken}`, // Include the JWT token here
         },
-        body: JSON.stringify({ lesson_id: "6758982577273a8886a8d836" }), // Replace with your actual lesson ID
+        body: JSON.stringify({ lesson_id: "675d923c645a60a661c6fef5" }), // Replace with your actual lesson ID
       });
 
       const data = await response.json();

@@ -57,4 +57,41 @@ exports.verifycontroller = async (req, res) => {
       res.status(500).json({ error: "Error verifying payment." });
     }
   };
-  
+
+
+// exports.verifycontroller = async (req, res) => {
+//   try {
+//     const { razorpay_payment_id, razorpay_order_id, razorpay_signature } = req.body;
+
+//     // Validate the input
+//     if (!razorpay_payment_id || !razorpay_order_id || !razorpay_signature) {
+//       return res.status(400).json({ error: "Missing required parameters" });
+//     }
+
+//     // Prepare the signature data
+//     const hmac = crypto.createHmac('sha256', process.env.RAZORPAY_KEY_SECRET);
+//     const generated_signature = hmac.update(razorpay_order_id + "|" + razorpay_payment_id).digest('hex');
+
+//     // Compare generated signature with the provided signature
+//     if (generated_signature === razorpay_signature) {
+//       // If the signature matches, mark the payment as successful and update the order status
+//       const order = await Order.findOne({ razorpay_order_id });
+
+//       if (!order) {
+//         return res.status(404).json({ error: "Order not found" });
+//       }
+
+//       // Update order status to 'paid'
+//       order.status = "paid";
+//       await order.save();
+
+//       res.json({ message: "Payment verified successfully." });
+//     } else {
+//       res.status(400).json({ error: "Payment verification failed: Invalid signature." });
+//     }
+//   } catch (err) {
+//     console.error("Error verifying payment:", err);
+//     res.status(500).json({ error: "Error verifying payment." });
+//   }
+// };
+

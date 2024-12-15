@@ -87,7 +87,7 @@ exports.ordercontroller = async (req, res) => {
             from: process.env.EMAIL_USER,
             to: [student.email, lesson.tutorEmail],  // Send email to both student and tutor
             subject: 'Lesson Order Created',
-            text: `Dear ${student.name},\n\nYour order for the lesson "${lesson.title}" has been created successfully.\n\nOrder ID: ${order.id}\nAmount: ₹${lesson.price}\n\nThank you!`,
+            text: `Dear ${student.name},\n\nYour order for the lesson "${lesson.title}" and meeting link "${lesson.meetingLink}" has been created successfully.\n\nOrder ID: ${order.id}\nAmount: ₹${lesson.price}\n\nThank you!`,
         };
 
         // Send email to student and tutor

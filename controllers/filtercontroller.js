@@ -1,51 +1,23 @@
 const Tutor = require("../models/tutors");
 
 exports.filtercontroller = async (req, res) => {
-    const { subject, nameStartsWith, minExperience, maxExperience, availability, maxPrice } = req.query;
-
     try {
-        // Construct a dynamic filter object
-        const filter = {};
+        const { subject, nameStartsWith, minExperience, maxExperience } = req.query;
 
-        // Filter by subject
-        if (subject) {
-            filter.subjects = subject;
-        }
+        // Build a dynamic query
+        const query = {};
+        if (subject) query.subjects = new RegExp(subject, 'i'); // Case-insensitive subject filter
+        if (nameStartsWith) query.name = new RegExp(`^${nameStartsWith}`, 'i'); // Name starts with
+        if (minExperience) query.experience = { ...query.experience, $gte: parseInt(minExperience) };
+        if (maxExperience) query.experience = { ...query.experience, $lte: parseInt(maxExperience) };
 
-        // Filter by name starting letter
-        if (nameStartsWith) {
-            filter.name = new RegExp(`^${nameStartsWith}`, "i"); // Case-insensitive match for starting letter
-        }
+        // Fetch tutors matching the filters
+        const filteredTutors = await Tutor.find(query);
+        console.log("Filtered Tutors:", filteredTutors);
 
-        // Filter by experience range
-        if (minExperience || maxExperience) {
-            filter.experience = {};
-            if (minExperience) filter.experience.$gte = parseInt(minExperience);
-            if (maxExperience) filter.experience.$lte = parseInt(maxExperience);
-        }
-
-        // Filter by availability
-        if (availability) {
-            filter.availability = availability; // Matches any availability value
-        }
-
-        // Filter by maximum price
-        if (maxPrice) {
-            filter.price = { $lte: parseFloat(maxPrice) };
-        }
-
-        // Fetch tutors based on the constructed filter
-        const tutors = await Tutor.find(filter).select(
-            "name experience qualifications expertise subjects availability price"
-        );
-
-        if (!tutors.length) {
-            return res.status(404).json({ error: "No tutors found matching the criteria!" });
-        }
-
-        res.status(200).json(tutors);
+        res.status(200).json(filteredTutors);
     } catch (err) {
         console.error("Error fetching tutors:", err);
-        res.status(500).json({ error: "Failed to fetch tutors!" });
+        res.status(500).json({ error: 'Failed to fetch tutors' });
     }
 };
