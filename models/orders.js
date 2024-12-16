@@ -3,12 +3,16 @@ const mongoose = require('mongoose');
 const orderSchema = new mongoose.Schema({
   lesson_id: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Lesson', // Reference to the Lesson model
+    ref: 'Lesson',
     required: true,
   },
-  student_id: {
-    type: mongoose.Schema.Types.ObjectId, // Aligning with studentsSchema where studentId is ObjectId
-    ref: 'Student', // Reference to the Student model
+  studentId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Student',
+    required: true,
+  },
+  tutorId: {
+    type: mongoose.Schema.Types.ObjectId,
     required: true,
   },
   student_email: {
@@ -16,6 +20,18 @@ const orderSchema = new mongoose.Schema({
     required: true,
     match: [/^\S+@\S+\.\S+$/, 'Please provide a valid email address'], // Email validation
   },
+  tutor_email: {
+    type: String, // Store tutors's email
+    required: true,
+    match: [/^\S+@\S+\.\S+$/, 'Please provide a valid email address'], // Email validation
+  },
+  scheduledClass: {
+    type: Date,
+    required: true
+},
+tutor_Name: {type: String, required: false},
+title: { type: String, required: false },
+  meetingLink: { type: String, required: false }, // Jitsi meeting link
   amount: {
     type: Number, // Amount in INR (e.g., 500 for 500 INR)
     required: true,
@@ -25,10 +41,10 @@ const orderSchema = new mongoose.Schema({
     required: true,
   },
   razorpay_payment_id: {
-    type: String, // Razorpay's payment ID (optional, can be added later)
+    type: String,
   },
   razorpay_signature: {
-    type: String, // Razorpay payment signature (optional, can be added later)
+    type: String,
   },
   status: {
     type: String,

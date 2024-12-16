@@ -55,6 +55,35 @@ exports.studentsregister = async (req, res) => {
     }
 };
 
+exports.checkStudentStatus = async (req, res, next) => {
+    const { email } = req.body; // Extract email from the body of the request
+
+    if (!email) {
+        return res.status(400).json({ error: 'Email is required!' });
+    }
+
+    try {
+        // Find the student by email
+        const student = await students.findOne({ email });
+
+        if (!student) {
+            return res.status(404).json({ error: 'Student not found!' });
+        }
+
+        // Check if the student is active
+        if (!student.isActive) {
+            return res.status(403).json({ error: 'Your account is inactive. Please contact support.' });
+        }
+
+        // If active, proceed to the next middleware or route handler
+        req.student = student;  // Attach student object to the request for later use
+        next();
+    } catch (err) {
+        console.error('Error while checking student status:', err);
+        return res.status(500).json({ error: 'An error occurred while checking student status!' });
+    }
+};
+
 // Student Login
 exports.studentslogin = async (req, res) => {
     const { email, password } = req.body;
@@ -72,11 +101,17 @@ exports.studentslogin = async (req, res) => {
             { userId: student._id, studentId: student.studentId, name: student.name, email: student.email },
             process.env.JWT_SECRET, // Secret key (use an environment variable)
             { expiresIn: '1h' } // Token expiration time
+
+            
         );
 
         // Send the token and other relevant data
-        res.status(200).json({ message: 'Login successful!', token });
-    } catch (err) {
+        res.status(200).json({ 
+            message: 'Login successful!', 
+            token,
+            isActive: student.isActive // Include the isActive field
+        });
+        } catch (err) {
         console.error("Login error:", err); // Log the actual error
         res.status(500).json({ error: 'Something went wrong!' });
     }
@@ -170,6 +205,35 @@ exports.tutorsregister = async (req, res) => {
     }
 };
 
+exports.checkTutorStatus = async (req, res, next) => {
+    const { email } = req.body; // Extract email from the body of the request
+
+    if (!email) {
+        return res.status(400).json({ error: 'Email is required!' });
+    }
+
+    try {
+        // Find the student by email
+        const tutor = await tutors.findOne({ email });
+
+        if (!tutor) {
+            return res.status(404).json({ error: 'tutor not found!' });
+        }
+
+        // Check if the student is active
+        if (!tutor.isActive) {
+            return res.status(403).json({ error: 'Your account is inactive. Please contact support.' });
+        }
+
+        // If active, proceed to the next middleware or route handler
+        req.tutor = tutor;  // Attach student object to the request for later use
+        next();
+    } catch (err) {
+        console.error('Error while checking tutor status:', err);
+        return res.status(500).json({ error: 'An error occurred while checking tutor status!' });
+    }
+};
+
 // Tutors Login
 exports.tutorslogin = async (req, res) => {
     const { email, password } = req.body;
@@ -190,8 +254,11 @@ exports.tutorslogin = async (req, res) => {
         );
 
         // Send the token and other relevant data
-        res.status(200).json({ message: 'Login successful!', token });
-    } catch (err) {
+        res.status(200).json({ 
+            message: 'Login successful!', 
+            token,
+            isActive: user.isActive // Include the isActive field
+        });    } catch (err) {
         console.error(err); // Log the actual error
         res.status(500).json({ error: 'Something went wrong!' });
     }

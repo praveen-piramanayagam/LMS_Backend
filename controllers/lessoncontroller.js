@@ -4,16 +4,21 @@ const mongoose = require('mongoose');
 
 exports.createLesson = async (req, res) => {
     try {
-        const { title, description, subject, duration, price } = req.body;
+        const { title, description, subject, duration, price,scheduledClass } = req.body;
         const tutorId = req.tutor.tutorId; // Assuming tutorId is passed in `req.tutor`
 
         // Validate required fields
-        if (!title || !description || !subject || !duration || !price) {
+        if (!title || !description || !subject || !duration || !price || !scheduledClass) {
             return res.status(400).json({ error: 'All fields are required!' });
         }
 
         if (!tutorId) {
             return res.status(400).json({ error: 'Tutor ID is required!' });
+        }
+        const [day, month, year] = scheduledClass.split('/');
+        const parsedDate = new Date(`${year}-${month}-${day}`);
+        if (isNaN(parsedDate)) {
+            return res.status(400).json({ error: 'Invalid scheduledClass date format. Use dd/mm/yyyy.' });
         }
 
         // Ensure `tutorId` is valid and exists in the tutors collection
@@ -23,7 +28,8 @@ exports.createLesson = async (req, res) => {
         }
 
         // Generate the Jitsi meeting link
-        const meetingLink = `https://meet.jit.si/${tutorId}-${subject}-${title}`;
+        const encodedSubject = subject.replace(/\s+/g, '-');
+        const meetingLink = `https://meet.jit.si/${tutorId}-${encodedSubject}`;
 
         // Create a new lesson document
         const newLesson = new Lesson({
@@ -32,9 +38,11 @@ exports.createLesson = async (req, res) => {
             subject,
             duration,
             price,
-            tutorId, // Directly store the tutorId as a reference
+            tutorId,
+            tutorName: tutor.name,
             tutorEmail: tutor.email,
             meetingLink,
+            scheduledClass: parsedDate
         });
 
         // Save the lesson to the database

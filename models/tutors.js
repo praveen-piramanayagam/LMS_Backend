@@ -25,6 +25,10 @@ const tutorsSchema = new mongoose.Schema({
             message: 'At least one available day is required in a week',
         },
     },
+    isActive: {
+        type: Boolean,
+        default: true // Default to active when a student is created
+    },
     studentsReview: {
         type: [
             {

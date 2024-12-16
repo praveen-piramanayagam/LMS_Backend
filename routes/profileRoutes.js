@@ -1,5 +1,5 @@
 const express = require('express');
-const { getStudentsProfile, updateStudentProfile, getTutorsProfile, updateTutorsProfile, getAdminsProfile, updateAdminProfile, deleteStudent, deletetutor } = require('../controllers/profilecontroller');
+const { getStudentsProfile, updateStudentProfile, getTutorsProfile, updateTutorsProfile, getAdminsProfile, updateAdminProfile, toggleStudentStatus, toggleTutorStatus, getallStudents, getallTutors } = require('../controllers/profilecontroller');
 const { isAdmin } = require('../controllers/authcontroller');
 
 const profileRouter = express.Router();
@@ -10,13 +10,15 @@ profileRouter.get('/getstudent/:studentId',getStudentsProfile);
 profileRouter.put('/updatestudent/:studentId',updateStudentProfile);
 profileRouter.get('/gettutor/:tutorId',getTutorsProfile);
 profileRouter.put('/updatetutor/:tutorId',updateTutorsProfile);
-profileRouter.get('/getadmin/:adminId',isAdmin,getAdminsProfile);
+profileRouter.get('/getadmin/:adminId',getAdminsProfile);
 profileRouter.put('/updateadmin/:adminId',isAdmin,updateAdminProfile);
 
 
-//Delete by admin only
-profileRouter.delete('/deletestudent/:studentId', isAdmin, deleteStudent);
-profileRouter.delete('/deletetutor/:tutorId', isAdmin, deletetutor);
+//Admin only
+profileRouter.get('/getallstudents',isAdmin,getallStudents);
+profileRouter.get('/getalltutors',isAdmin,getallTutors);
+profileRouter.put('/deactivatestudent/:studentId', isAdmin, toggleStudentStatus);
+profileRouter.put('/deactivatetutor/:tutorId', isAdmin, toggleTutorStatus);
 
 
 module.exports = profileRouter;

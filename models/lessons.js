@@ -12,7 +12,12 @@ const lessonSchema = new mongoose.Schema({
     price: { type: Number, required: true },
     tutorId: { type: mongoose.Schema.Types.ObjectId, ref: 'Tutor', required: true },
     tutorEmail: { type: String, required: true },
-    meetingLink: { type: String, required: false }, // Jitsi meeting link
+    tutorName: {type: String, required: true},
+    meetingLink: { type: String, required: false },
+    scheduledClass: {
+        type: Date,
+        required: true
+    },
 }, { timestamps: true });
 
 module.exports = mongoose.model('Lesson', lessonSchema);

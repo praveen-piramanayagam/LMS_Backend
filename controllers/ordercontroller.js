@@ -42,6 +42,9 @@ exports.ordercontroller = async (req, res) => {
 
         // Find the lesson by lesson_id
         const lesson = await Lesson.findOne({ lesson_id: new mongoose.Types.ObjectId(lesson_id) });
+        const scheduledClass = lesson.scheduledClass;
+        const tutor_Name = lesson.tutorName;
+
         if (!lesson) {
             console.error("Lesson not found with ID:", lesson_id);
             return res.status(404).json({ error: "Lesson not found." });
@@ -52,6 +55,7 @@ exports.ordercontroller = async (req, res) => {
 
         // Generate a receipt
         const receipt = `lesson_${lesson_id}_purchase_${student.studentId}`.slice(0, 40);
+
 
         // Razorpay order options
         const options = {
@@ -73,22 +77,35 @@ exports.ordercontroller = async (req, res) => {
         // Save order in the database, including tutor email
         const newOrder = new Order({
             razorpay_order_id: order.id,
-            student_id: student.studentId,
+            studentId: student.studentId,
             student_email: student.email,
-            tutor_email: lesson.tutorEmail,  // Save tutor's email
+            tutor_email: lesson.tutorEmail,
+            meetingLink: lesson.meetingLink,
+            tutor_Name: lesson.tutorName,
+            scheduledClass: lesson.scheduledClass,
+            title: lesson.title,
+            tutorId: lesson.tutorId,
             lesson_id,
             amount,
             status: "pending",
         });
+        
         await newOrder.save();
+        
 
-        // Define mail options inside the controller
-        const mailOptions = {
-            from: process.env.EMAIL_USER,
-            to: [student.email, lesson.tutorEmail],  // Send email to both student and tutor
-            subject: 'Lesson Order Created',
-            text: `Dear ${student.name},\n\nYour order for the lesson "${lesson.title}" and meeting link "${lesson.meetingLink}" has been created successfully.\n\nOrder ID: ${order.id}\nAmount: ₹${lesson.price}\n\nThank you!`,
-        };
+                // Format scheduledClass to display only date and day
+                const scheduledDate = new Date(lesson.scheduledClass);
+                const formattedDate = scheduledDate.toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' });
+                const formattedDay = scheduledDate.toLocaleDateString('en-IN', { weekday: 'long' });
+        
+                // Define mail options inside the controller
+                const mailOptions = {
+                    from: process.env.EMAIL_USER,
+                    to: [student.email, lesson.tutorEmail],  // Send email to both student and tutor
+                    subject: 'Lesson Order Created',
+                    text: `Dear ${student.name},\n\nyou have purchased a lesson "${lesson.title}" which will be hosted by tutor "${lesson.tutorName}".\n\nYour meeting link is "${lesson.meetingLink}".\n\nThe live session is scheduled for "${formattedDay}, ${formattedDate}". The session timing will be from 10am to 1pm.\n\nOrder ID: ${order.id}\nAmount: ₹${lesson.price}\n\nThank you!`,
+                };
+        
 
         // Send email to student and tutor
         transporter.sendMail(mailOptions, (error, info) => {
