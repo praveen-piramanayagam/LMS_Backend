@@ -21,7 +21,7 @@ app.use(cors({
     origin: [
         'http://127.0.0.1:5500', 
         'http://localhost:5173', 
-        'https://lmsmainproject.netlify.app' // Add your frontend URL here
+        'https://lmsmainproject.netlify.app'
     ],
     methods: ['GET', 'POST', 'PUT'],
     allowedHeaders: ['Content-Type', 'Authorization'],

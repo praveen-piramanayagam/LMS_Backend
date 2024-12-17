@@ -130,38 +130,44 @@ const sendEmail = (to, subject, text) => {
 
 // Payment Verification Controller
 exports.verifycontroller = async (req, res) => {
-  try {
-      const { razorpay_payment_id, razorpay_order_id, razorpay_signature } = req.body;
+    try {
+        const { razorpay_payment_id, razorpay_order_id, razorpay_signature } = req.body;
 
-      // Check if parameters exist
-      if (!razorpay_payment_id || !razorpay_order_id || !razorpay_signature) {
-          return res.status(400).json({ error: "Missing required parameters" });
-      }
+        // Check if parameters exist
+        if (!razorpay_payment_id || !razorpay_order_id || !razorpay_signature) {
+            return res.status(400).json({ error: "Missing required parameters" });
+        }
 
-      // Prepare the signature data
-      const hmac = crypto.createHmac('sha256', process.env.RAZORPAY_KEY_SECRET);
-      const generated_signature = hmac.update(razorpay_order_id + "|" + razorpay_payment_id).digest('hex');
+        // Prepare the signature data
+        const hmac = crypto.createHmac('sha256', process.env.RAZORPAY_KEY_SECRET);
+        const generated_signature = hmac.update(razorpay_order_id + "|" + razorpay_payment_id).digest('hex');
 
-      // Compare generated signature with the provided signature
-      if (generated_signature === razorpay_signature) {
-          const order = await Order.findOne({ razorpay_order_id });
+        // Compare generated signature with the provided signature
+        if (generated_signature === razorpay_signature) {
+            const order = await Order.findOne({ razorpay_order_id });
 
-          if (!order) {
-              return res.status(404).json({ error: "Order not found" });
-          }
+            if (!order) {
+                return res.status(404).json({ error: "Order not found" });
+            }
 
-          // Update order status to 'paid'
-          order.status = "paid";
-          await order.save();
+            // Update order status to 'paid'
+            order.status = "paid";
+            await order.save();
 
-          
+            // Log to ensure email is being sent
+            console.log('Sending email to student:', order.student_email);
+            console.log('Sending email to tutor:', order.tutor_email);
 
-          res.json({ message: "Payment verified and order status updated to 'paid'." });
-      } else {
-          res.status(400).json({ error: "Payment verification failed." });
-      }
-  } catch (err) {
-      console.error("Error verifying payment:", err);
-      res.status(500).json({ error: "Error verifying payment." });
-  }
+            // Send email to student and tutor
+            sendEmail(order.student_email, 'Payment Confirmation', 'Your payment has been successfully processed.');
+            sendEmail(order.tutor_email, 'Payment Confirmation', 'The payment for your lesson has been successfully processed.');
+
+            res.json({ message: "Payment verified and order status updated to 'paid'." });
+        } else {
+            res.status(400).json({ error: "Payment verification failed." });
+        }
+    } catch (err) {
+        console.error("Error verifying payment:", err);
+        res.status(500).json({ error: "Error verifying payment." });
+    }
 };

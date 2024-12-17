@@ -21,11 +21,11 @@ const transporter = nodemailer.createTransport({
         rejectUnauthorized: false,  // This can be used to bypass the certificate check
     }
 });
+ 
 
 // Create Order with student mapping
 exports.ordercontroller = async (req, res) => {
     try {
-        console.log("Order controller triggered"); // Debug log
         const { lesson_id } = req.body;
         const student = req.student;
 
@@ -42,17 +42,20 @@ exports.ordercontroller = async (req, res) => {
 
         // Find the lesson by lesson_id
         const lesson = await Lesson.findOne({ lesson_id: new mongoose.Types.ObjectId(lesson_id) });
+        const scheduledClass = lesson.scheduledClass;
+        const tutor_Name = lesson.tutorName;
+
         if (!lesson) {
             console.error("Lesson not found with ID:", lesson_id);
             return res.status(404).json({ error: "Lesson not found." });
         }
 
-        const scheduledClass = lesson.scheduledClass;
-        const tutor_Name = lesson.tutorName;
+        // Extract lesson price
         const amount = lesson.price;
 
         // Generate a receipt
         const receipt = `lesson_${lesson_id}_purchase_${student.studentId}`.slice(0, 40);
+
 
         // Razorpay order options
         const options = {
@@ -88,28 +91,31 @@ exports.ordercontroller = async (req, res) => {
         });
         
         await newOrder.save();
+        
 
-        // Format scheduledClass to display only date and day
-        const scheduledDate = new Date(lesson.scheduledClass);
-        const formattedDate = scheduledDate.toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' });
-        const formattedDay = scheduledDate.toLocaleDateString('en-IN', { weekday: 'long' });
-
-        // Define mail options inside the controller
-        const mailOptions = {
-            from: process.env.EMAIL_USER,
-            to: [student.email, lesson.tutorEmail],  // Send email to both student and tutor
-            subject: 'Lesson Order Created',
-            text: `Dear ${student.name},\n\nyou have purchased a lesson "${lesson.title}" which will be hosted by tutor "${lesson.tutorName}".\n\nYour meeting link is "${lesson.meetingLink}".\n\nThe live session is scheduled for "${formattedDay}, ${formattedDate}". The session timing will be from 10am to 1pm.\n\nOrder ID: ${order.id}\nAmount: ₹${lesson.price}\n\nThank you!`,
-        };
-
-        // Log email details for debugging
-        console.log("Email to:", [student.email, lesson.tutorEmail]);
-        console.log("Email subject:", mailOptions.subject);
-        console.log("Email body:", mailOptions.text);
+                // Format scheduledClass to display only date and day
+                const scheduledDate = new Date(lesson.scheduledClass);
+                const formattedDate = scheduledDate.toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' });
+                const formattedDay = scheduledDate.toLocaleDateString('en-IN', { weekday: 'long' });
+        
+                // Define mail options inside the controller
+                const mailOptions = {
+                    from: process.env.EMAIL_USER,
+                    to: [student.email, lesson.tutorEmail],  // Send email to both student and tutor
+                    subject: 'Lesson Order Created',
+                    text: `Dear ${student.name},\n\nyou have purchased a lesson "${lesson.title}" which will be hosted by tutor "${lesson.tutorName}".\n\nYour meeting link is "${lesson.meetingLink}".\n\nThe live session is scheduled for "${formattedDay}, ${formattedDate}". The session timing will be from 10am to 1pm.\n\nOrder ID: ${order.id}\nAmount: ₹${lesson.price}\n\nThank you!`,
+                };
+        
 
         // Send email to student and tutor
-        await transporter.sendMail(mailOptions);
-        console.log("Email sent successfully");
+        transporter.sendMail(mailOptions, (error, info) => {
+            if (error) {
+                console.error("Error sending email:", error);
+                return;
+            }
+            console.log("Email sent: " + info.response);
+        });
+        
 
         // Respond to the client
         res.status(201).json({
