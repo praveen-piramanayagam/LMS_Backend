@@ -18,10 +18,15 @@ app.use(express.json());
 // Enable CORS for all routes
 app.use(cors());
 app.use(cors({
-    origin: ['http://127.0.0.1:5500', 'http://localhost:5173'], // Add your frontend URLs here
-    methods: ['GET', 'POST'],
+    origin: [
+        'http://127.0.0.1:5500', 
+        'http://localhost:5173', 
+        'https://lmsmainproject.netlify.app' // Add your frontend URL here
+    ],
+    methods: ['GET', 'POST', 'PUT'],
     allowedHeaders: ['Content-Type', 'Authorization'],
 }));
+
 
 // Middleware to parse URL-encoded data
 app.use(express.urlencoded({ extended: true }));
