@@ -37,11 +37,11 @@ exports.fetchstudentOrder = async (req, res) => {
 
 exports.fetchTutorOrder = async (req, res) => {
     try {
-        const { tutorId } = req.params; // Get email from req.body
+        const { tutorId } = req.params; // Get ID from req.params
 
         // Validate the email
         if (!tutorId) {
-            return res.status(400).json({ error: 'Email is required!' });
+            return res.status(400).json({ error: 'tutorId is required!' });
         }
 
         // Fetch all orders with the provided tutor's email
@@ -63,7 +63,7 @@ exports.fetchTutorOrder = async (req, res) => {
             })),
         });
     } catch (err) {
-        console.error('Error fetching tutor orders by email:', err.message);
+        console.error('Error fetching tutor orders by tutorId:', err.message);
         res.status(500).json({ error: 'Failed to fetch orders!' });
     }
 };
