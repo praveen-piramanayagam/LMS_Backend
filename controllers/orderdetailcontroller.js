@@ -1,5 +1,7 @@
 const Order = require('../models/orders');
 require('dotenv').config();
+const mongoose = require('mongoose'); // Import mongoose for ObjectId validation
+
 
 exports.fetchstudentOrder = async (req, res) => {
     try {
@@ -37,21 +39,21 @@ exports.fetchstudentOrder = async (req, res) => {
 
 exports.fetchTutorOrder = async (req, res) => {
     try {
-        const { tutorId } = req.params; // Get ID from req.params
+        const { tutorId } = req.params; // Get tutorId from URL params
 
-        // Validate the email
-        if (!tutorId) {
-            return res.status(400).json({ error: 'tutorId is required!' });
+        // Check if tutorId is missing or invalid
+        if (!tutorId || !mongoose.Types.ObjectId.isValid(tutorId)) {
+            return res.status(400).json({ error: 'Invalid or missing tutorId!' });
         }
 
-        // Fetch all orders with the provided tutor's email
+        // Fetch all orders for the given tutorId
         const orders = await Order.find({ tutorId: tutorId }).select('razorpay_order_id amount title tutor_email');
 
         if (!orders || orders.length === 0) {
-            return res.status(404).json({ error: 'No orders found for the given tutor email!' });
+            return res.status(404).json({ error: 'No orders found for the given tutorId!' });
         }
 
-        // Respond with the list of orders
+        // Respond with the orders
         res.status(200).json({
             message: 'Orders retrieved successfully',
             orders: orders.map(order => ({
@@ -59,7 +61,7 @@ exports.fetchTutorOrder = async (req, res) => {
                 title: order.title,
                 amount: order.amount,
                 student_email: order.student_email,
-                tutorId: order.tutorId
+                tutorId: order.tutorId,
             })),
         });
     } catch (err) {
